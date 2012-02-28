@@ -242,6 +242,12 @@ class Irc:
 	def invite(self, user, channel):
 		self.send_raw('INVITE %s %s' % (user, channel))
 	
+	def kick(self, user, channel, reason=None):
+		if(reason):
+			self.send_raw('KICK %s %s :%s' % (user,channel,reason))
+		else:
+			self.send_raw('KICK %s %s' % (user,channel))
+
 	@staticmethod
 	def color(front = -1, back = -1):
 		if front == -1 and back == -1:
