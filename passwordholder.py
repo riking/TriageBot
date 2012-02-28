@@ -1,0 +1,2 @@
+nickservUser = "TriageBot"
+nickservPass = ""
