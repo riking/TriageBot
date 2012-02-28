@@ -3,12 +3,13 @@ import threading;
 import sys;
 
 class TriageHandler:
-	userm = [] #array of tuple (user, mode)
+	userm = [] #array of tuple (user, status)
 	admins = []
 	dontkick = []
 	methods = [handleS0,handleS1,handleS2,handleS3,handleS4,handleS5,handleS6] #array of handler methods
 	iconn = None
 
+#user statuses
 	STARTING = 0
 	MAINMENU = 1
 	MCERROR = 2
@@ -87,14 +88,14 @@ class TriageHandler:
 			if(s[0]==user): #Works!
 				self.userm.remove(s)
 				
-	#User states
-	#0: just joined
-	#1: root menu[1234]
-	#2: got mcerror[1]
-	#3: asked for mod help[12]
-	#4: picked Other from main menu[123]
-	#5: other>admin commands[1234]
-	#6: invited to #risucraft[]
+#user statuses
+#	STARTING = 0
+#	MAINMENU = 1
+#	MCERROR = 2
+#	MODHELP = 3
+#	OTHERMENU = 4
+#	ADMINMENU = 5
+#	INVITED = 6
 	def restartUser(self,user):
 		self.setUMode(user,STARTING)
 		self.say("Okay, restarting.")
@@ -113,4 +114,16 @@ class TriageHandler:
 
 	def handleS1(self,user,msg):
 		n=main.parseNumber(msg)
-		
+		if n==1:
+			self.say('''mcerror is a program to log Minecraft's output and errors. To download, go here and click "Downloads" on the right: http://bit.ly/t154lG''')
+			self.say("If it tells you that it can't figure it out, say one again.")
+			self.setUMode(user,MCERROR)
+		elif n==2:
+			self.say("Okay. If you don't see your problem on the following list, say one. If you do, say the number.")
+			self.say("(2) Entities not rendering")
+			self.setUMode(user,MODHELP)
+		elif n==3:
+			self.say("Sure thing. I'll add you to the exempt list so you don't have to go through this again.")
+			main.
+
+
