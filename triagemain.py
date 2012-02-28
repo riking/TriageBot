@@ -1,6 +1,7 @@
 from irc import Irc;
 from triage import TriageHandler;
 import threading;
+
 #config stuff
 mainchannel = '#risucraft'
 triagechannel = '#risucraftTriage'
@@ -125,3 +126,7 @@ def inviteExemptAdd(user):
 def inviteExemptDel(user):
 	iconn.send_raw("MODE %s -I %s" % (mainchannel,user))
 	
+
+if __name__ == "__main__":
+	init1()
+
