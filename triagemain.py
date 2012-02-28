@@ -9,25 +9,24 @@ nickservPass = 'HzeBdMNDQfyQB7xx'
 #initial enable state. 0 = disabled, -1 = testing, 1 = enabled
 enabled = -1
 ######
-iconn = new Irc()
+iconn = Irc()
 iconn.nick = 'TriageBot'
 iconn.ident = 'RikBots'
 iconn.realname = 'triagebot'
 
-triageInst = None
-#ircthread
-
-def init():
+def init1():
+	global ircthread,iconn;
 	iconn.on_ready.registerHandler(init2)
-	ircthread = new threading.Thread(target=iconn.connect,("irc.esper.net",6667))
+	ircthread = threading.Thread(target=iconn.connect,args=("irc.esper.net",6667))
 	ircthread.start()
 
 def init2():
-	iconn.msg("NickServ","IDENTIFY %s %s" % (nickservUser,nickservPass)
+	global iconn,triageInst;
+	iconn.msg("NickServ","IDENTIFY %s %s" % (nickservUser,nickservPass))
 	iconn.join(triagechannel)
 	iconn.join(mainchannel)
 	testEnable()
-	triageInst = new TriageHandler(iconn)
+	triageInst = TriageHandler(iconn)
 	
 def invite(nick):
 	iconn.invite(nick,mainchannel)
@@ -41,60 +40,68 @@ def inviteExempt(str,flag):
 		iconn.send_raw("MODE %s +I $a:%s" % (mainchannel,str))
 		
 
+def parseChoice(user,s):
+#logging wrapper
+	a = parseNumber(s)
+	parseLog("%s-%i~%s" % (user, a, s))
+	return a
+	
 def parseNumber(s):
-	#returns 0 thru 9
+	#returns 0 thru 9 or parseRetry()
 	try:
-		a=-1
-		a=int(s)
-		return a
+		return int(s)
 	except TypeError:
-		parseLog(s)
 		q=['zero','one','two','three','four','five','six','seven','eight','nine']
 		for x in range(10):
-			if str(x) in s:
+			if str(x) in s: #numbers embedded in text
 				return x
-			if q[x] in s:
+			if q[x] in s: #spelled out the number
 				return x
 		
 		return parseRetry(s)
+
 		
 def parseRetry(s):
 	#Responses:
 	#10: unknown
 	#11: "restart"
-	q=['restart','retry','start over','back','main menu','do this again']
+	q=['restart','retry','start over','back','main menu','do this again','try again']
 	for x in q:
 		if x in s:
 			return 11
 
 	return 10
 
+
 def parseLog(s):
 	pass
 	
 
 def shutdown():
+	global enabled;
 	iconn.msg(triagechannel, "Triage bot shutting down..")
-	if not testing:
+	if not(enabled == -1):
 		iconn.msg(mainchannel, "Triage bot shutting down..")
 	disable()
 	iconn.quit()
 
 def disable():
+	global enabled;
 	enabled = 0
 	iconn.msg(triagechannel, "Disabling TriageBot")
 	inviteOff()
 	forwardOff()
 
 def enable():
+	global enabled;
 	iconn.msg(triagechannel, "Enabling TriageBot")
 	inviteOn()
 	forwardOn()
 	enabled = 1
-	if not testing:
-		iconn.msg(mainchannel, "TriageBot is now enabled")
+	iconn.msg(mainchannel, "TriageBot is now enabled")
 
 def testEnable():
+	global enabled;
 	iconn.msg(triagechannel, "Entering test mode")
 	inviteOff()
 	forwardOff()
