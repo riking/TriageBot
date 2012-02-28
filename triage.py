@@ -1,6 +1,6 @@
 import threading,sys;
 #import triagemain as main;
-
+#import moved to bottom
 
 class TriageHandler:
 	userm = [] #array of tuple (user, status)
@@ -74,8 +74,11 @@ class TriageHandler:
 				print "Message from %s ignored because disabled" % user
 				return
 			print "<%s>: %s" % (user,msg)
-			self.methods[self.getUMode(user)] (user,msg)
-			print "method returned"
+			
+			threading.Thread(target = self.methods[self.getUMode(user)], args = (user,msg)).start()
+			
+			print "onMsg method returned"
+			return 
 		elif chan == main.mainchannel:
 			if(msg[:len("TriageBot:")]=="TriageBot:"):
 				pass
