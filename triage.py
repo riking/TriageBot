@@ -25,46 +25,62 @@ class TriageHandler:
 		self.iconn.on_part.__iadd__(self.onPart)
 		self.iconn.on_quit.__iadd__(self.onQuit)
 		self.iconn.on_kick.__iadd__(self.onKick)
+		print "triage hooks registered"
 
 	
 	def say(self,msg):
 		self.iconn.msg(main.triagechannel,msg)
 
 	def onJoin(self,chan,user):
-		if(chan == main.triagechannel):
+		print "%s joined %s" % (user,chan)
+		if user == self.iconn.nick:
+			return
+		if chan == main.triagechannel:
 			self.setUMode(user,0)
 			self.handleS0(user,None)
-		if(chan == main.mainchannel):
-			if(self.getUMode(user) == 6):
+		elif chan == main.mainchannel:
+			if self.getUMode(user) == 6:
 				iconn.kick(user,main.triagechannel,"Thank you for using the Triage Bot")
 				self.removeUser(user)
 			
 
 	def onPart(self,chan,user):
-		if(chan == main.triagechannel):
+		if user == self.iconn.nick:
+			return
+		if chan == main.triagechannel:
 			self.removeUser(user)
-		if(chan == main.mainchannel):
+		if chan == main.mainchannel:
 			pass
 
 			
-	def onQuit(self,chan,user):
+	def onQuit(self,user):
+		if user == self.iconn.nick:
+			return
 		if(chan == main.triagechannel):
 			self.removeUser(user)
 		if(chan == main.mainchannel):
 			pass
 
 	def onKick(self,chan,user):
-		pass #hmm dont think we need to do anything
+		if user == self.iconn.nick:
+			if chan == main.mainchannel:
+				self.iconn.msg(main.triagechannel, "Kicked from #risucraft")
+				self.iconn.join(main.mainchannel)
+				main.shutdown()
 	
 	def onMsg(self,user,chan,msg):
-		if(chan == main.triagechannel):
+		if chan == main.triagechannel:
 			if(main.enabled == 0):
+				print "Message from %s ignored because disabled" % user
 				return
+			print "<%s>: %s" % (user,msg)
 			self.methods[self.getUMode(user)] (user,msg)
-		elif(chan == main.mainchannel):
+			print "method returned"
+		elif chan == main.mainchannel:
 			if(msg[:len("TriageBot:")]=="TriageBot:"):
 				pass
-
+		else:
+			print "message from %s ignored because wrong channel (%s)" % (user,chan)
 
 	def onNick(self,oldnick,newnick):
 		for s in self.userm:
@@ -77,9 +93,8 @@ class TriageHandler:
 			if(s[0]==user):
 				return s[1]
 		else:
-			print "User not found: %s" % user
+			print "User not found in user status list: %s" % user
 			self.setUMode(user,0)
-			self.say('a weird error has occured with %s. you have been sent to the start' % user)
 	
 
 	def setUMode(self,user,val):

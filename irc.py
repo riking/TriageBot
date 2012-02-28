@@ -16,8 +16,8 @@ class Irc:
 	on_channel_msg = Event() #user,channel,text.
 	on_private_msg = Event() #user,text
 	on_nick_changed = Event() #oldnick,newnick
-	on_join = Event() #Channel, username. When someone else joins a channel
-	on_part = Event() #channel, username. Someone else parts
+	on_join = Event() #Channel, username.
+	on_part = Event() #channel, username.
 	on_quit = Event() #channel
 	on_kick = Event() #channel, user, kicking user
 	on_output = Event() #Channel, text to show

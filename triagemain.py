@@ -4,7 +4,7 @@ import threading;
 import passwordholder;
 
 #config stuff
-mainchannel = '#risucraft'
+mainchannel = '#risucraftt'
 triagechannel = '#risucraftTriage'
 #initial enable state. 0 = disabled, -1 = testing, 1 = enabled
 enabled = -1
@@ -22,7 +22,9 @@ def init1():
 
 def init2():
 	global iconn,triageInst;
+	print "identifying to nickserv"
 	iconn.msg("NickServ","IDENTIFY %s %s" % (passwordholder.nickservUser,passwordholder.nickservPass))
+	print "joining channels"
 	iconn.join(triagechannel)
 	iconn.join(mainchannel)
 	triageInst = TriageHandler(iconn)
