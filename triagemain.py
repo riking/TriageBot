@@ -111,3 +111,10 @@ def forwardOn():
 	
 def forwardOff():
 	iconn.send_raw("MODE %s -f #%s" % (mainchannel,triagechannel))
+
+def inviteExemptAdd(user):
+	iconn.send_raw("MODE %s +I %s" % (mainchannel,user))
+
+def inviteExemptDel(user):
+	iconn.send_raw("MODE %s -I %s" % (mainchannel,user))
+	
