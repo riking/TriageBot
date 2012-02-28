@@ -46,24 +46,30 @@ def parseNumber(s):
 	try:
 		a=-1
 		a=int(s)
-		return x
+		return a
 	except TypeError:
+		parseLog(s)
 		q=['zero','one','two','three','four','five','six','seven','eight','nine']
 		for x in range(10):
 			if str(x) in s:
 				return x
 			if q[x] in s:
 				return x
-		else:
 		
-def parseRetry(str):
+		return parseRetry(s)
+		
+def parseRetry(s):
 	#Responses:
 	#10: unknown
 	#11: "restart"
-	pass
-	
+	q=['restart','retry','start over','back','main menu','do this again']
+	for x in q:
+		if x in s:
+			return 11
 
-def parseLog(str):
+	return 10
+
+def parseLog(s):
 	pass
 	
 
