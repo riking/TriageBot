@@ -17,8 +17,9 @@ class Irc:
 	on_private_msg = Event() #user,text
 	on_nick_changed = Event() #oldnick,newnick
 	on_join = Event() #Channel, username. When someone else joins a channel
-	on_part = Event() #channel,username. Someone else parts
-	on_quit = Event() #channel,username. Someone else quits
+	on_part = Event() #channel, username. Someone else parts
+	on_quit = Event() #channel
+	on_kick = Event() #channel, user, kicking user
 	on_output = Event() #Channel, text to show
 	
 	#def __init__(self):
@@ -184,7 +185,17 @@ class Irc:
 							self.on_output.call(channel, '%s has left %s (%s)' % (user, channel, params[0]))
 						else:
 							self.on_output.call(channel, '%s has left %s' % (user, channel))
-				self.on_quit.call(user,params[0])
+				self.on_quit.call(user)
+				
+#>> :Krenair!~Krenair@ZNC.MonsterProjects.org KICK #tf2 Riking :Riking
+			if msg == 'KICK':
+				user = sender[0:sender.find('!')]
+				del self.users[params[0]][user]
+				if len(params) == 3:
+					self.on_output.call(params[0], '%s has been kicked from %s by %s (%s)' % (user, params[0], params[1], params[2]))
+				else:
+					self.on_output.call(params[0], '%s has been kicked from %s by %s' % (user, params[0], params[1]))
+				self.on_kick.call(user,params[0],params[1])
 				
 			if msg == 'PRIVMSG':
 				user = sender[0:sender.find('!')]
