@@ -1,6 +1,7 @@
 import threading,sys;
 #import triagemain as main;
 
+
 class TriageHandler:
 	userm = [] #array of tuple (user, status)
 	admins = []
@@ -17,14 +18,13 @@ class TriageHandler:
 	ADMINMENU = 5
 	INVITED = 6
 
-
 	def __init__(self,ircconnection):
 		self.iconn = ircconnection
-		self.iconn.on_channel_msg.registerHandler(self.onMsg)
-		self.iconn.on_join.registerHandler(self.onJoin)
-		self.iconn.on_part.registerHandler(self.onPart)
-		self.iconn.on_quit.registerHandler(self.onQuit)
-		self.iconn.on_kick.registerHandler(self.onKick)
+		self.iconn.on_channel_msg.__iadd__(self.onMsg)
+		self.iconn.on_join.__iadd__(self.onJoin)
+		self.iconn.on_part.__iadd__(self.onPart)
+		self.iconn.on_quit.__iadd__(self.onQuit)
+		self.iconn.on_kick.__iadd__(self.onKick)
 
 	
 	def say(self,msg):
@@ -53,6 +53,8 @@ class TriageHandler:
 		if(chan == main.mainchannel):
 			pass
 
+	def onKick(self,chan,user):
+		pass #hmm dont think we need to do anything
 	
 	def onMsg(self,user,chan,msg):
 		if(chan == main.triagechannel):
@@ -103,7 +105,7 @@ class TriageHandler:
 #	ADMINMENU = 5
 #	INVITED = 6
 	def restartUser(self,user):
-		self.setUMode(user,STARTING)
+		self.setUMode(user,self.STARTING)
 		self.say("Okay, going back to the main menu.")
 		self.handleS0(user,None)
 	
@@ -111,7 +113,7 @@ class TriageHandler:
 		if(reason and main.enabled == 1): #do NOT send to main channel when testing
 			self.iconn.msg(main.mainchannel,reason)
 		self.iconn.invite(user,main.mainchannel)
-		self.setUMode(user,INVITED)
+		self.setUMode(user,self.INVITED)
 
 	def handleS0(self,user,msg):
 		self.say("Hello, %s! I am the #risucraft triage bot." % user)
@@ -119,7 +121,7 @@ class TriageHandler:
 		self.say("(1) Mod installing help (2) Mod making help (3) I just want to chat (4) Other")
 		self.say("Pick one and type the number.")
 
-		self.setUMode(user,MAINMENU)
+		self.setUMode(user,self.MAINMENU)
 	
 
 	def handleS1(self,user,msg):
@@ -138,12 +140,12 @@ class TriageHandler:
 			self.say('''MCError is a program to log Minecraft's output and errors. To download, go here and click "Downloads" on the right: http://bit.ly/t154lG''')
 			self.say("If MCError tells you that it can't figure out your problem, say one again to join #risucraft.")
 			self.say("If it solved your problem, you're free to leave. In the case that MCError crashes, say two.")
-			self.setUMode(user,MCERROR)
+			self.setUMode(user,self.MCERROR)
 
 		elif n==2:
 			self.say("Okay. If you don't see your problem on the following list, say one. If you do, say the number.")
 			self.say("(2) Entities not rendering")
-			self.setUMode(user,MODHELP)
+			self.setUMode(user,self.MODHELP)
 
 		elif n==3:
 			self.say("Sure thing. I'll add you to the exempt list so you don't have to go through this again.")
@@ -152,7 +154,7 @@ class TriageHandler:
 
 		elif n==4:
 			self.say("(1) Just let me in (2) Admin commands (11) Return to main menu")
-			self.setUMode(OTHERMENU)
+			self.setUMode(self.OTHERMENU)
 
 		elif n==10:
 
@@ -212,7 +214,7 @@ class TriageHandler:
 				elif(main.enabled == 1):
 					self.say("(1) Disable TriageBot (2) Shut down TriageBot (3) Enter Testing Mode (4) Add invite exempt (5) Remove invite exempt")
 
-				self.setUMode(ADMINMENU)
+				self.setUMode(self.ADMINMENU)
 			else: #not an admin
 				self.say("You're not a TriageBot admin!")
 		elif n==11:
@@ -224,7 +226,7 @@ class TriageHandler:
 		if not ((self.iconn.get_mode_char(main.triagechannel) == '@') or    (self.iconn.get_mode_char(main.mainchannel) == '@')):
 			print "Adminship assertion failed!"
 			self.say("Something went wrong. You shouldn't be in this menu.")
-			self.setUMode(user,STARTING)
+			self.setUMode(user,self.STARTING)
 			return
 		else:
 			n=main.parseChoice(user,msg)
@@ -250,7 +252,7 @@ class TriageHandler:
 				main.shutdown()
 			elif n==11:
 				self.say("Say something to trigger join.")
-				self.setUMode(user,STARTING)
+				self.setUMode(user,self.STARTING)
 
 	def handleS6(self,user,msg):
 		n=main.parseChoice(user,msg)
