@@ -31,7 +31,8 @@ class TriageHandler:
 			self.handleS0(user,None)
 		if(chan == main.mainchannel):
 			if(self.getUMode(user) == 6):
-				iconn.kick
+				iconn.kick(user,main.triagechannel,"Thank you for using the Triage Bot")
+				self.removeUser(user)
 			
 
 	def onPart(self,chan,user):
@@ -83,9 +84,8 @@ class TriageHandler:
 
 	def removeUser(self,user):
 		for s in self.userm:
-			if(s[0]==user): #need to figure this out
+			if(s[0]==user): #Works!
 				self.userm.remove(s)
-				#del s
 				
 	#User states
 	#0: just joined
