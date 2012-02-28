@@ -1,12 +1,11 @@
 from irc import Irc;
 #from triage import TriageHandler;
 import threading;
+import passwordholder;
 
 #config stuff
 mainchannel = '#risucraft'
 triagechannel = '#risucraftTriage'
-nickservUser = 'TriageBot'
-nickservPass = 'HzeBdMNDQfyQB7xx'
 #initial enable state. 0 = disabled, -1 = testing, 1 = enabled
 enabled = -1
 ######
@@ -23,7 +22,7 @@ def init1():
 
 def init2():
 	global iconn,triageInst;
-	iconn.msg("NickServ","IDENTIFY %s %s" % (nickservUser,nickservPass))
+	iconn.msg("NickServ","IDENTIFY %s %s" % (passwordholder.nickservUser,passwordholder.nickservPass))
 	iconn.join(triagechannel)
 	iconn.join(mainchannel)
 	triageInst = TriageHandler(iconn)
@@ -31,13 +30,13 @@ def init2():
 def invite(nick):
 	iconn.invite(nick,mainchannel)
 
-def inviteExempt(str,flag):
+def inviteExempt(s,flag):
 	if(flag):
 		#Hostmask
-		iconn.send_raw("MODE %s +I %s" % (mainchannel,str))
+		iconn.send_raw("MODE %s +I %s" % (mainchannel,s))
 	else:
 		#Account name
-		iconn.send_raw("MODE %s +I $a:%s" % (mainchannel,str))
+		iconn.send_raw("MODE %s +I $a:%s" % (mainchannel,s))
 		
 
 def parseChoice(user,s):
