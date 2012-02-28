@@ -1,5 +1,5 @@
 from irc import Irc;
-from triage import TriageHandler;
+#from triage import TriageHandler;
 import threading;
 
 #config stuff
@@ -17,7 +17,7 @@ iconn.realname = 'triagebot'
 
 def init1():
 	global ircthread,iconn;
-	iconn.on_ready.registerHandler(init2)
+	iconn.on_ready.__iadd__(init2)
 	ircthread = threading.Thread(target=iconn.connect,args=("irc.esper.net",6667))
 	ircthread.start()
 
@@ -26,7 +26,6 @@ def init2():
 	iconn.msg("NickServ","IDENTIFY %s %s" % (nickservUser,nickservPass))
 	iconn.join(triagechannel)
 	iconn.join(mainchannel)
-	testEnable()
 	triageInst = TriageHandler(iconn)
 	
 def invite(nick):
@@ -130,3 +129,4 @@ def inviteExemptDel(user):
 if __name__ == "__main__":
 	init1()
 
+from triage import TriageHandler;

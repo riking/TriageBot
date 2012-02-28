@@ -1,6 +1,5 @@
-import threading;
-import sys;
-import triagemain;
+import threading,sys;
+#import triagemain as main;
 
 class TriageHandler:
 	userm = [] #array of tuple (user, status)
@@ -29,38 +28,38 @@ class TriageHandler:
 
 	
 	def say(self,msg):
-		self.iconn.msg(triagemain.triagechannel,msg)
+		self.iconn.msg(main.triagechannel,msg)
 
 	def onJoin(self,chan,user):
-		if(chan == triagemain.triagechannel):
+		if(chan == main.triagechannel):
 			self.setUMode(user,0)
 			self.handleS0(user,None)
-		if(chan == triagemain.mainchannel):
+		if(chan == main.mainchannel):
 			if(self.getUMode(user) == 6):
-				iconn.kick(user,triagemain.triagechannel,"Thank you for using the Triage Bot")
+				iconn.kick(user,main.triagechannel,"Thank you for using the Triage Bot")
 				self.removeUser(user)
 			
 
 	def onPart(self,chan,user):
-		if(chan == triagemain.triagechannel):
+		if(chan == main.triagechannel):
 			self.removeUser(user)
-		if(chan == triagemain.mainchannel):
+		if(chan == main.mainchannel):
 			pass
 
 			
 	def onQuit(self,chan,user):
-		if(chan == triagemain.triagechannel):
+		if(chan == main.triagechannel):
 			self.removeUser(user)
-		if(chan == triagemain.mainchannel):
+		if(chan == main.mainchannel):
 			pass
 
 	
 	def onMsg(self,user,chan,msg):
-		if(chan == triagemain.triagechannel):
-			if(triagemain.enabled == 0):
+		if(chan == main.triagechannel):
+			if(main.enabled == 0):
 				return
 			self.methods[self.getUMode(user)] (user,msg)
-		elif(chan == triagemain.mainchannel):
+		elif(chan == main.mainchannel):
 			if(msg[:len("TriageBot:")]=="TriageBot:"):
 				pass
 
@@ -109,9 +108,9 @@ class TriageHandler:
 		self.handleS0(user,None)
 	
 	def invite(self, user, reason=""):
-		if(reason and triagemain.enabled == 1): #do NOT send to main channel when testing
-			self.iconn.msg(triagemain.mainchannel,reason)
-		self.iconn.invite(user,triagemain.mainchannel)
+		if(reason and main.enabled == 1): #do NOT send to main channel when testing
+			self.iconn.msg(main.mainchannel,reason)
+		self.iconn.invite(user,main.mainchannel)
 		self.setUMode(user,INVITED)
 
 	def handleS0(self,user,msg):
@@ -124,7 +123,7 @@ class TriageHandler:
 	
 
 	def handleS1(self,user,msg):
-		n=triagemain.parseChoice(user,msg)
+		n=main.parseChoice(user,msg)
 		#additional parsing attempts
 		if n==10:
 			if "instal" in msg:
@@ -148,7 +147,7 @@ class TriageHandler:
 
 		elif n==3:
 			self.say("Sure thing. I'll add you to the exempt list so you don't have to go through this again.")
-			triagemain.inviteExemptAdd(user)
+			main.inviteExemptAdd(user)
 			self.invite(user,"Inviting %s to chat.")
 
 		elif n==4:
@@ -166,19 +165,19 @@ class TriageHandler:
 
 
 	def handleS2(self,user,msg):
-		n=triagemain.parseChoice(user,msg)
+		n=main.parseChoice(user,msg)
 		if n==1:
 			self.say("Well, I'm sorry that MCError couldn't figure it out for you.")
 			self.invite(user,"Inviting %s with a MCError report" % user)
 		elif n==2:
-			self.say("Hm. Inviting you to "+triagemain.mainchannel)
+			self.say("Hm. Inviting you to "+main.mainchannel)
 			self.invite(user,"Inviting %s with a possible MCError failure" % user)
 		elif n==11:
 			self.restartUser(user)
 
 
 	def handleS3(self,user,msg):
-		n=triagemain.parseChoice(user,msg)
+		n=main.parseChoice(user,msg)
 		if n==10:
 			self.say("I'm sorry, I didn't recognize that.")
 		if n==1:
@@ -191,7 +190,7 @@ class TriageHandler:
 
 
 	def handleS4(self,user,msg):
-		n=triagemain.parseChoice(user,msg)
+		n=main.parseChoice(user,msg)
 		if n==10:
 			if "admin" in msg:
 				n=2
@@ -200,17 +199,17 @@ class TriageHandler:
 			self.invite(user)
 		elif n==2:
 			#adminship check
-			if (self.iconn.get_mode_char(triagemain.triagechannel) == '@') or (self.iconn.get_mode_char(triagemain.mainchannel) == '@'  ):
+			if (self.iconn.get_mode_char(main.triagechannel) == '@') or (self.iconn.get_mode_char(main.mainchannel) == '@'  ):
 
-				self.say("Current mode: %s" % ('Disabled' if not triagemain.enabled else ('Testing' if triagemain.enabled==-1 else 'Enabled')))
+				self.say("Current mode: %s" % ('Disabled' if not main.enabled else ('Testing' if main.enabled==-1 else 'Enabled')))
 				self.say("Use ; to start args, e.g. '5 ;Samantha'")
-				if(triagemain.enabled == -1):
+				if(main.enabled == -1):
 					self.say("(1) Enable TriageBot (2) Shut down TriageBot (3) Disable TriageBot (4) Add invite exempt (5) Remove invite exempt")
 
-				elif(triagemain.enabled == 0):
+				elif(main.enabled == 0):
 					self.say("(1) Enable TriageBot (2) Shut down TriageBot (3) Enter Testing Mode (4) Add invite exempt (5) Remove invite exempt")
 
-				elif(triagemain.enabled == 1):
+				elif(main.enabled == 1):
 					self.say("(1) Disable TriageBot (2) Shut down TriageBot (3) Enter Testing Mode (4) Add invite exempt (5) Remove invite exempt")
 
 				self.setUMode(ADMINMENU)
@@ -222,39 +221,39 @@ class TriageHandler:
 
 
 	def handleS5(self,user,msg):
-		if not ((self.iconn.get_mode_char(triagemain.triagechannel) == '@') or    (self.iconn.get_mode_char(triagemain.mainchannel) == '@')):
+		if not ((self.iconn.get_mode_char(main.triagechannel) == '@') or    (self.iconn.get_mode_char(main.mainchannel) == '@')):
 			print "Adminship assertion failed!"
 			self.say("Something went wrong. You shouldn't be in this menu.")
 			self.setUMode(user,STARTING)
 			return
 		else:
-			n=triagemain.parseChoice(user,msg)
+			n=main.parseChoice(user,msg)
 			if n==4 or n==5:
 				arg = msg[msg.find(';'):]
 				if not arg:
 					self.say("Huh? That needs an argument.")
 				elif n==4:
-					triagemain.inviteExemptAdd(user)
+					main.inviteExemptAdd(user)
 				elif n==5:
-					triagemain.inviteExemptDel(user)
+					main.inviteExemptDel(user)
 			elif n==1:
-				if not(triagemain.enabled == 1):
-					triagemain.enable()
+				if not(main.enabled == 1):
+					main.enable()
 				else:
-					triagemain.disable()
+					main.disable()
 			elif n==3:
-				if not(triagemain.enabled == -1):
-					triagemain.testEnable()
+				if not(main.enabled == -1):
+					main.testEnable()
 				else:
-					triagemain.disable()
+					main.disable()
 			elif n==2:
-				triagemain.shutdown()
+				main.shutdown()
 			elif n==11:
 				self.say("Say something to trigger join.")
 				self.setUMode(user,STARTING)
 
 	def handleS6(self,user,msg):
-		n=triagemain.parseChoice(user,msg)
+		n=main.parseChoice(user,msg)
 		if n==11:
 			self.restartUser(user)
 			return
@@ -266,3 +265,4 @@ class TriageHandler:
 	methods = [handleS0,handleS1,handleS2,handleS3,handleS4,handleS5,handleS6] #array of handler methods. Declared at end of file, after all def's complete
 
 # (outside class)
+import triagemain as main;
