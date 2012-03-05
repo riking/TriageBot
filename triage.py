@@ -5,7 +5,7 @@ import threading,sys;
 class TriageHandler:
 	seenusers = []
 	#admins are subject to Nickserv verification.
-	admins = ['Riking','Risugami','_303','Corosus','lahwran','medsouz']
+	admins = ['Riking','Risugami','_303','Corosus','lahwran','medsouz','kingbdogz','Seronis','CyborgDragon','Mr_okushama','xales','Kodaichi','TehKrush']
 	
 	#format: tuple (nick, number)
 	#1: just joined  5: shutdown request  6: enable request  7: disable request
