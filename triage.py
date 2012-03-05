@@ -4,10 +4,16 @@ import threading,sys;
 
 class TriageHandler:
 	seenusers = []
-	admins = ['Riking','Risugami',']
+	#admins are subject to Nickserv verification.
+	admins = ['Riking','Risugami','_303','Corosus','lahwran','medsouz']
+	
+	#format: tuple (nick, number)
+	#1: just joined  5: shutdown request  6: enable request  7: disable request
+	nickservwaiting = []
 	iconn = None
 
 #Format: (id, action, message)
+# by the way, i know the id is redundant.
 #action 1: log it!
 	messages = [
 (0,0, """Hey. I'll be your automated mod installation helper. To proceed through each prompt, you need to type a number.\n\
@@ -51,7 +57,7 @@ go back to #risucraft.""")
 		if main.enabled:
 			self.iconn.msg(main.triagechannel,msg)
 			
-	def read(self,msg_id):
+	def read(self,msg_id): #TODO: action
 		if main.enabled:
 			q = messages[msg_id].split('\n')
 			for s in q:
@@ -62,8 +68,9 @@ go back to #risucraft.""")
 		if user == self.iconn.nick:
 			return
 		elif chan == main.mainchannel:
-			if not user in seenusers:
-				seenusers.append(user)
+			if not user in self.seenusers:
+				self.seenusers.append(user)
+				self.nickservwaiting.append( (user,1) )
 				self.iconn.send_raw("ns ACC %s" % user)
 				
 				
@@ -71,12 +78,33 @@ go back to #risucraft.""")
 		if sender == "NickServ":
 			r = text.split(' ')
 			if r[2] == 0: #they do not have a nickserv account
-				if not r[0] in seenusers:
-					seenusers.append(r[0])
-					self.sayM('''Welcome to #risucraft, %s!\
-If you want automated mod installing help, say !autohelp and I will assist you.\
-If you need help with creating a mod, just ask your question and someone will get to helping you.''' % r[0])
-
+				a = self.getNSObj(r[0])
+				if a(1) == 1:
+					if not r[0] in seenusers:
+						seenusers.append(r[0])
+						self.sayM('''Welcome to #risucraft, %s!\
+	If you want automated mod installing help, say !autohelp and I will assist you.\
+	If you need help with creating a mod, just ask your question and someone will get to helping you.''' % r[0])
+				elif a(1) >= 5 and a(1) <= 10: #admin command
+					if r[0] in admins:
+						self.sayT("In order to use admin commands, you must log in to NickServ.")
+			elif r[2] == 1: #not logged in
+				if a(1) >= 5 and a(1) <= 10: #admin command
+					if r[0] in admins:
+						self.sayT("In order to use admin commands, you must log in to NickServ.")
+			elif r[2] == 3 or r[2] == 2: #logged in / hostmask match
+				if a(1) >= 5 and a(1) <= 10: #admin command
+					if r[0] in admins:
+						if a(1) == 5:
+							self.sayT("Shutting down.")
+							main.shutdown()
+						elif a(1) == 6:
+							self.sayT("Enabling.")
+							main.enable()
+						elif a(1) == 7:
+							self.sayT("Disabling.")
+							main.disable()
+					
 
 	def onPart(self,chan,user):
 		pass
