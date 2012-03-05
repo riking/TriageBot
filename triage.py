@@ -13,19 +13,35 @@ class TriageHandler:
 	#deprecated^
 	iconn = None
 
-#user statuses
-	STARTING = 0
-	MAINMENU = 1
-	MCERROR = 2
-	MODHELP = 3
-	OTHERMENU = 4
-	ADMINMENU = 5
-	INVITED = 6
-	#deprecated^
+#Format: (id, action, message)
+#action 1: log it!
+	messages = [
+(0,0, """Hey. I'll be your automated mod install helper bot. To proceed through each prompt, you need to type a number.\n\
+To continue, type 0.""")
+,(1,0, """Good job! Okay, let's start. Please download and run MCError, at http://bit.ly/t154lG .\n\
+If you are having trouble finding the download, say 3. For more info about the tool, say 4.\n\
+Once you have downloaded the tool, say 2.""")
+,(2,0, """Please run the tool. If you're using Linux, make sure to mark it executable first. Click "Launch Minecraft",\
+then close Minecraft once it crashes.\n\
+If MCError tells you what's wrong, say 5. If it doesn't, say 6.""")
+,(3,0, """ """)
+,(4,0, """ """)
+,(5,0, """Okay. Try to fix the problem, and click "Launch Minecraft" again. Repeat this until it works.\n\
+If this solves your problem, please say 8. If you don't know how to fix it, say 7.""")
+,(6,1, """Sorry that MCError couldn't automatically detect the issue.\
+Please click on both Paste Error and Modloader.txt.\n\
+Once it gives the links, say !report <error link> <ml.txt link> and go back to #risucraft.""")
+,(7,1, """Please click both Paste Error and ModLoader.txt. Then say !fixhelp <error link> <modloader.txt link> and \
+go back to #risucraft.""")
+,(8,1, """Thank you for using the mod installation auto-help bot.""")
+]
+
+
 
 	def __init__(self,ircconnection):
 		self.iconn = ircconnection
 		self.iconn.on_channel_msg.__iadd__(self.onMsg)
+		self.iconn.on_private_notice.__iadd__(self.onNickServReturn)
 		self.iconn.on_join.__iadd__(self.onJoin)
 		self.iconn.on_part.__iadd__(self.onPart)
 		self.iconn.on_quit.__iadd__(self.onQuit)
@@ -33,14 +49,19 @@ class TriageHandler:
 		print "triage hooks registered"
 
 	
-	def sayOLD(self,msg):
+	def say(self,msg):
 		#deprecated^
 		if main.enabled:
 			self.iconn.msg(main.triagechannel,msg)
 			
-	def say(self,msg):
+	def sayM(self,msg):
 		if main.enabled:
 			self.iconn.msg(main.mainchannel,msg)
+			
+	def read(self,msg_id):
+		if main.enabled:
+			
+			self.iconn.msg(main.triagechannel
 			
 	def onJoin(self,chan,user):
 		print "%s joined %s" % (user,chan)
@@ -48,9 +69,18 @@ class TriageHandler:
 			return
 		elif chan == main.mainchannel:
 			if not user in seenusers:
-				self.say("Welcome to #risucraft, "+user+"! If you want automated mod installing help, say !autohelp.")
 				seenusers.append(user)
-			
+				self.iconn.send_raw("ns ACC %s" % user)
+				
+				
+	def onNickServReturn(self,sender,text):
+		if sender == "NickServ":
+			r = text.split(' ')
+			if r[2] == 0: #they do not have a nickserv account
+				if not r[0] in seenusers:
+					seenusers.append(r[0])
+					self.sayM("Welcome to #risucraft, %s! If you want automated mod installing help, say !autohelp and I will assist you." % r[0])
+
 
 	def onPart(self,chan,user):
 		pass
@@ -68,9 +98,9 @@ class TriageHandler:
 	
 	def onMsg(self,user,chan,msg):
 		if chan == main.mainchannel:
-			if msg[0:0] == '!': ##################!!!!!!!!!!!!!!! check this
+			if msg[0] == '!':
 				keyword = '!autohelp'
-				if msg[:len(keyword)] == keyword:
+				if keyword in msg:
 					self.handleStartCommand(user)
 
 	def onNick(self,oldnick,newnick):
