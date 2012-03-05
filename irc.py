@@ -15,6 +15,7 @@ class Irc:
 	on_ready = Event() #No params. After MOTD
 	on_channel_msg = Event() #user,channel,text.
 	on_private_msg = Event() #user,text
+	on_notice = Event() #user, target (could be us),text
 	on_nick_changed = Event() #oldnick,newnick
 	on_join = Event() #Channel, username.
 	on_part = Event() #channel, username.
@@ -206,6 +207,19 @@ class Irc:
 				else:
 					self.on_output.call('server', '<%s> %s' % (user, params[1]))
 					self.on_private_msg.call(sender, params[1])
+					
+			if msg == 'NOTICE':
+				user = sender[0:sender.find('!')]
+				# notice in a channel or private message?
+				if params[0][0] == '#':
+					self.on_output.call(params[0], '-%s/%s%s- %s' % (params[0], self.get_mode_char(user, params[0]), user, params[1]))
+					# channel, target, text
+					self.on_notice.call(sender, params[0], params[1])
+				else:
+					self.on_output.call('server', '-%s- %s' % (user, params[1]))
+					#sender, us, text
+					self.on_notice.call(sender, params[0], params[1])
+					
 					
 	def get_mode_char(self, user, channel):
 		if self.users[channel].has_key(user):
