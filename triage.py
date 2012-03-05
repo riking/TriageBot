@@ -1,285 +1,177 @@
 import threading,sys;
 #import triagemain as main;
-
+#import moved to bottom
 
 class TriageHandler:
-	userm = [] #array of tuple (user, status)
-	admins = []
-	dontkick = []
-	#methods = [handleS0,handleS1,handleS2,handleS3,handleS4,handleS5,handleS6] #array of handler methods
+	seenusers = []
+	#admins are subject to Nickserv verification.
+	admins = ['Riking','Risugami','_303','Corosus','lahwran','medsouz','kingbdogz','Seronis','CyborgDragon','Mr_okushama','xales','Kodaichi','TehKrush']
+	
+	#format: tuple (nick, number)
+	#1: just joined  5: shutdown request  6: enable request  7: disable request
+	nickservwaiting = []
 	iconn = None
 
-#user statuses
-	STARTING = 0
-	MAINMENU = 1
-	MCERROR = 2
-	MODHELP = 3
-	OTHERMENU = 4
-	ADMINMENU = 5
-	INVITED = 6
+#Format: (id, action, message)
+# by the way, i know the id is redundant.
+#action 1: log it!
+	messages = [
+(0,0, """Hey. I'll be your automated mod installation helper. To proceed through each prompt, you need to type a number.\n\
+To continue, type 0.""")
+,(1,0, """Good job! Okay, let's start. Please download and run MCError, at http://bit.ly/t154lG .\n\
+If you are having trouble finding the download, say 3. For more info about the tool, say 4.\n\
+Once you have downloaded the tool, say 2.""")
+,(2,0, """Please run the tool. If you're using Linux, make sure to mark it executable first. Click "Launch Minecraft",\
+then close Minecraft once it crashes.\n\
+If MCError tells you what's wrong, say 5. If it doesn't, say 6.""")
+,(3,0, """Here's a more direct link: https://github.com/medsouz/MinecraftError/downloads Click on the file with the highest version number that does not say testing.""")
+,(4,0, """MCError was created by medsouz. The GUI was made by Malqua, and the analysis was made by Riking. To view the code, go to https://github.com/medsouz/MinecraftError""")
+,(5,0, """Okay. Try to fix the problem, and click "Launch Minecraft" again. Repeat this until it works.\n\
+If this solves your problem, please say 8. If you don't know how to fix it, say 7.""")
+,(6,1, """Sorry that MCError couldn't automatically detect the issue.\
+Please click on both Paste Error and Modloader.txt.\n\
+Once it gives the links, say !report <error link> <ml.txt link> and go back to #risucraft.""")
+,(7,1, """Please click both Paste Error and ModLoader.txt. Then say !fixhelp <error link> <modloader.txt link> and \
+go back to #risucraft.""")
+,(8,1, """Thank you for using the mod installation auto-help bot.""")
+]
+
+
 
 	def __init__(self,ircconnection):
 		self.iconn = ircconnection
 		self.iconn.on_channel_msg.__iadd__(self.onMsg)
+		self.iconn.on_private_notice.__iadd__(self.onNickServReturn)
 		self.iconn.on_join.__iadd__(self.onJoin)
 		self.iconn.on_part.__iadd__(self.onPart)
 		self.iconn.on_quit.__iadd__(self.onQuit)
 		self.iconn.on_kick.__iadd__(self.onKick)
-		print "triage hooks registered"
+		print "triage.py ready"
 
-	
-	def say(self,msg):
-		self.iconn.msg(main.triagechannel,msg)
-
+			
+	def sayM(self,msg):
+		if main.enabled:
+			self.iconn.msg(main.mainchannel,msg)
+			
+	def sayT(self,msg):
+		if main.enabled:
+			self.iconn.msg(main.triagechannel,msg)
+			
+	def read(self,msg_id): #TODO: action
+		if main.enabled:
+			q = messages[msg_id].split('\n')
+			for s in q:
+				self.iconn.msg(main.triagechannel,q)
+			
 	def onJoin(self,chan,user):
 		print "%s joined %s" % (user,chan)
 		if user == self.iconn.nick:
 			return
-		if chan == main.triagechannel:
-			self.setUMode(user,0)
-			self.handleS0(user,None)
 		elif chan == main.mainchannel:
-			if self.getUMode(user) == 6:
-				iconn.kick(user,main.triagechannel,"Thank you for using the Triage Bot")
-				self.removeUser(user)
-			
+			if not user in self.seenusers:
+				self.seenusers.append(user)
+				self.nickservwaiting.append( (user,1) )
+				self.iconn.send_raw("ns ACC %s" % user)
+				
+				
+	def onNickServReturn(self,sender,text):
+		if sender == "NickServ":
+			r = text.split(' ')
+			if r[2] == 0: #they do not have a nickserv account
+				a = self.getNSObj(r[0])
+				if a(1) == 1:
+					if not r[0] in seenusers:
+						seenusers.append(r[0])
+						self.sayM('''Welcome to #risucraft, %s!\
+	If you want automated mod installing help, say !autohelp and I will assist you.\
+	If you need help with creating a mod, just ask your question and someone will get to helping you.''' % r[0])
+				elif a(1) >= 5 and a(1) <= 10: #admin command
+					if r[0] in admins:
+						self.sayT("In order to use admin commands, you must log in to NickServ.")
+			elif r[2] == 1: #not logged in
+				if a(1) >= 5 and a(1) <= 10: #admin command
+					if r[0] in admins:
+						self.sayT("In order to use admin commands, you must log in to NickServ.")
+			elif r[2] == 3 or r[2] == 2: #logged in / hostmask match
+				if a(1) >= 5 and a(1) <= 10: #admin command
+					if r[0] in admins:
+						if a(1) == 5:
+							self.sayT("Shutting down.")
+							main.shutdown()
+						elif a(1) == 6:
+							self.sayT("Enabling.")
+							main.enable()
+						elif a(1) == 7:
+							self.sayT("Disabling.")
+							main.disable()
+					
 
 	def onPart(self,chan,user):
-		if user == self.iconn.nick:
-			return
-		if chan == main.triagechannel:
-			self.removeUser(user)
-		if chan == main.mainchannel:
-			pass
-
+		pass
 			
 	def onQuit(self,user):
-		if user == self.iconn.nick:
-			return
-		if(chan == main.triagechannel):
-			self.removeUser(user)
-		if(chan == main.mainchannel):
-			pass
+		pass
 
 	def onKick(self,chan,user):
+		return #will do later
 		if user == self.iconn.nick:
 			if chan == main.mainchannel:
 				self.iconn.msg(main.triagechannel, "Kicked from #risucraft")
 				self.iconn.join(main.mainchannel)
 				main.shutdown()
 	
-	def onMsg(self,user,chan,msg):
-		if chan == main.triagechannel:
-			if(main.enabled == 0):
-				print "Message from %s ignored because disabled" % user
-				return
-			print "<%s>: %s" % (user,msg)
-			self.methods[self.getUMode(user)] (user,msg)
-			print "method returned"
-		elif chan == main.mainchannel:
-			if(msg[:len("TriageBot:")]=="TriageBot:"):
-				pass
-		else:
-			print "message from %s ignored because wrong channel (%s)" % (user,chan)
-
+			
 	def onNick(self,oldnick,newnick):
-		for s in self.userm:
-			if(s[0]==oldnick):
-				s[0]=newnick
+		self.seenusers.append(newnick)
+		#for s in self.seenusers:
+		#	if(s[0]==oldnick):
+		#		s[0]=newnick
 	
-
-	def getUMode(self,user):
-		for s in self.userm:
-			if(s[0]==user):
-				return s[1]
-		else:
-			print "User not found in user status list: %s" % user
-			self.setUMode(user,0)
-	
-
-	def setUMode(self,user,val):
-		for s in self.userm:
-			if(s[0]==user):
-				s[1]=val
-				break
-		else:
-			self.userm.append( (user,val) )
-		
 
 	def removeUser(self,user):
-		for s in self.userm:
-			if(s[0]==user): #Works!
-				self.userm.remove(s)
-				
-#user statuses
-#	STARTING = 0
-#	MAINMENU = 1
-#	MCERROR = 2
-#	MODHELP = 3
-#	OTHERMENU = 4
-#	ADMINMENU = 5
-#	INVITED = 6
-	def restartUser(self,user):
-		self.setUMode(user,self.STARTING)
-		self.say("Okay, going back to the main menu.")
-		self.handleS0(user,None)
+		self.seenusers.remove(s)
 	
-	def invite(self, user, reason=""):
-		if(reason and main.enabled == 1): #do NOT send to main channel when testing
-			self.iconn.msg(main.mainchannel,reason)
-		self.iconn.invite(user,main.mainchannel)
-		self.setUMode(user,self.INVITED)
-
-	def handleS0(self,user,msg):
-		self.say("Hello, %s! I am the #risucraft triage bot." % user)
-		self.say("Please say the number in this list that best describes your situation:")
-		self.say("(1) Mod installing help (2) Mod making help (3) I just want to chat (4) Other")
-		self.say("Pick one and type the number.")
-
-		self.setUMode(user,self.MAINMENU)
+	#onMsg moved to bottom
+	def handleStartCommand(user,msg):
+		self.sayM("%s, please join %s and I will help you." % (user, main.triagechannel))
+		self.iconn.invite(user,main.triagechannel)
 	
-
-	def handleS1(self,user,msg):
-		n=main.parseChoice(user,msg)
-		#additional parsing attempts
-		if n==10:
-			if "instal" in msg:
-				n=1
-			elif "makin" in msg:
-				n=2
-			elif "chat" in msg:
-				n=3
-			elif "other" in msg:
-				n=4
-		if n==1:
-			self.say('''MCError is a program to log Minecraft's output and errors. To download, go here and click "Downloads" on the right: http://bit.ly/t154lG''')
-			self.say("If MCError tells you that it can't figure out your problem, say one again to join #risucraft.")
-			self.say("If it solved your problem, you're free to leave. In the case that MCError crashes, say two.")
-			self.setUMode(user,self.MCERROR)
-
-		elif n==2:
-			self.say("Okay. If you don't see your problem on the following list, say one. If you do, say the number.")
-			self.say("(2) Entities not rendering")
-			self.setUMode(user,self.MODHELP)
-
-		elif n==3:
-			self.say("Sure thing. I'll add you to the exempt list so you don't have to go through this again.")
-			main.inviteExemptAdd(user)
-			self.invite(user,"Inviting %s to chat.")
-
-		elif n==4:
-			self.say("(1) Just let me in (2) Admin commands (11) Return to main menu")
-			self.setUMode(self.OTHERMENU)
-
-		elif n==10:
-
-			self.say("I'm sorry, I didn't recognize that. Your message has been logged and will be used to improve this bot. Please try again.")
-		elif n==11:
-			self.restartUser(user)
-			return
-		else:
-			self.say("That wasn't one of the choices!")
-
-
-	def handleS2(self,user,msg):
-		n=main.parseChoice(user,msg)
-		if n==1:
-			self.say("Well, I'm sorry that MCError couldn't figure it out for you.")
-			self.invite(user,"Inviting %s with a MCError report" % user)
-		elif n==2:
-			self.say("Hm. Inviting you to "+main.mainchannel)
-			self.invite(user,"Inviting %s with a possible MCError failure" % user)
-		elif n==11:
-			self.restartUser(user)
-
-
-	def handleS3(self,user,msg):
-		n=main.parseChoice(user,msg)
-		if n==10:
-			self.say("I'm sorry, I didn't recognize that.")
-		if n==1:
-			self.say("Sure thing.")
-			self.invite(user,"Inviting %s for mod help." % user)
-		elif n==2:
-			self.say("<under construction>")
-		elif n==11:
-			self.restartUser(user)
-
-
-	def handleS4(self,user,msg):
-		n=main.parseChoice(user,msg)
-		if n==10:
-			if "admin" in msg:
-				n=2
-		if n==1:
-			self.say("Sure thing.")
-			self.invite(user)
-		elif n==2:
-			#adminship check
-			if (self.iconn.get_mode_char(main.triagechannel) == '@') or (self.iconn.get_mode_char(main.mainchannel) == '@'  ):
-
-				self.say("Current mode: %s" % ('Disabled' if not main.enabled else ('Testing' if main.enabled==-1 else 'Enabled')))
-				self.say("Use ; to start args, e.g. '5 ;Samantha'")
-				if(main.enabled == -1):
-					self.say("(1) Enable TriageBot (2) Shut down TriageBot (3) Disable TriageBot (4) Add invite exempt (5) Remove invite exempt")
-
-				elif(main.enabled == 0):
-					self.say("(1) Enable TriageBot (2) Shut down TriageBot (3) Enter Testing Mode (4) Add invite exempt (5) Remove invite exempt")
-
-				elif(main.enabled == 1):
-					self.say("(1) Disable TriageBot (2) Shut down TriageBot (3) Enter Testing Mode (4) Add invite exempt (5) Remove invite exempt")
-
-				self.setUMode(self.ADMINMENU)
-			else: #not an admin
-				self.say("You're not a TriageBot admin!")
-		elif n==11:
-			self.restartUser(user)
-			return
-
-
-	def handleS5(self,user,msg):
-		if not ((self.iconn.get_mode_char(main.triagechannel) == '@') or    (self.iconn.get_mode_char(main.mainchannel) == '@')):
-			print "Adminship assertion failed!"
-			self.say("Something went wrong. You shouldn't be in this menu.")
-			self.setUMode(user,self.STARTING)
-			return
-		else:
-			n=main.parseChoice(user,msg)
-			if n==4 or n==5:
-				arg = msg[msg.find(';'):]
-				if not arg:
-					self.say("Huh? That needs an argument.")
-				elif n==4:
-					main.inviteExemptAdd(user)
-				elif n==5:
-					main.inviteExemptDel(user)
-			elif n==1:
-				if not(main.enabled == 1):
-					main.enable()
-				else:
-					main.disable()
-			elif n==3:
-				if not(main.enabled == -1):
-					main.testEnable()
-				else:
-					main.disable()
-			elif n==2:
-				main.shutdown()
-			elif n==11:
-				self.say("Say something to trigger join.")
-				self.setUMode(user,self.STARTING)
-
-	def handleS6(self,user,msg):
-		n=main.parseChoice(user,msg)
-		if n==11:
-			self.restartUser(user)
-			return
-		self.say("What are you still in here for? Go join #risucraft! If you want to restart, say 'restart'.")
-
-
-
-
-	methods = [handleS0,handleS1,handleS2,handleS3,handleS4,handleS5,handleS6] #array of handler methods. Declared at end of file, after all def's complete
-
+	
+	def handleReport(user,msg):
+		m = msg[len('report'):]
+		self.iconn.send_raw("MS SEND Riking %s" % m)
+		self.sayM("INSTALL HELP FOR %s: Error reports - %s" % (user,m))
+		
+		
+	def handleFixHelp(user,msg):
+		m = msg[len('fixhelp'):]
+		self.sayM("INSTALL HELP FOR %s: Fixing this error - %s" % (user,m))
+		
+		
+	def onMsg(self,user,chan,msg):
+		if chan == main.mainchannel:
+			if not main.disabled:
+				return
+			if msg[0] == '!':
+				commands = [	('!autohelp',self.handleStartCommand)]
+				for c in commands:
+					if c[0] in msg:
+						c[1].__call__(user,msg)
+		if chan == main.triagechannel:
+			if msg[0] == '!':
+				commands = [	('!report',self.handleReport),
+						('!fixhelp',self.handleFixHelp),
+						('!shutdown',self.handleShutdown),
+						('!disable',self.handleDisable),
+						('!enable',self.handleEnable)]
+				for c in commands:
+					if c[0] in msg:
+						c[1].__call__(user,msg)
+			a = 0
+			try:
+				a = int(msg)
+				self.read(a)
+			except ParseError:
+				pass
 # (outside class)
 import triagemain as main;
