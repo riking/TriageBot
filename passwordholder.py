@@ -1,2 +1,0 @@
-nickservUser = "TriageBot"
-nickservPass = ""
